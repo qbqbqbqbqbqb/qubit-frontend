@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Stream Controller</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        button { margin: 5px; padding: 10px; }
+        .toggle-on { background-color: green; color: white; }
+        .toggle-off { background-color: red; color: white; }
+    </style>
+</head>
+<body>
+    <h1>VTuber Bot Control</h1>
+    <button onclick="sendCommand('terminate')">Stop Bot</button>
+    <button onclick="sendCommand('start')">Start Bot</button>
+    <h2>Feature Toggles</h2>
+    <div id="toggles"></div>
+    <div id="status">Connecting...</div>
+
+    <script>
+        const ws = new WebSocket('ws://localhost:8765');
+        let features = { "twitch": true, "kick": true, "youtube": true, "stt": true, 
+        "chat": true, "raid": true, "follow": true, "subs": true, "monologue": true };
+
+        ws.onopen = () => { document.getElementById('status').innerText = 'Connected to backend.'; updateToggles(); };
+        ws.onmessage = (event) => { 
+            const data = JSON.parse(event.data); 
+            if (data.type === 'states') { features = data.data; updateToggles(); } 
+        };
+        ws.onclose = () => { document.getElementById('status').innerText = 'Disconnected.'; };
+
+        function updateToggles() {
+            const togglesDiv = document.getElementById('toggles');
+            togglesDiv.innerHTML = '';
+            for (const [key, value] of Object.entries(features)) {
+                const btn = document.createElement('button');
+                btn.innerText = `${key.charAt(0).toUpperCase() + key.slice(1)}: ${value ? 'ON' : 'OFF'}`;
+                btn.className = value ? 'toggle-on' : 'toggle-off';
+                btn.onclick = () => toggleFeature(key);
+                togglesDiv.appendChild(btn);
+            }
+        }
+
+        function toggleFeature(input) {
+            const currentState = features[input];
+            const newState = currentState ? 'off' : 'on';
+            ws.send(JSON.stringify({ action: 'toggle', input: input, state: newState }));
+        }
+
+        function sendCommand(action) {
+            ws.send(JSON.stringify({ action: action }));
+        }
+    </script>
+</body>
+</html>
