@@ -11,10 +11,21 @@
 </head>
 <body>
     <h1>VTuber Bot Control</h1>
+    
     <button onclick="sendCommand('terminate')">Stop Bot</button>
     <button onclick="sendCommand('start')">Start Bot</button>
+
     <h2>Feature Toggles</h2>
     <div id="toggles"></div>
+
+    <h2>Audio Files (Sing)</h2>
+    <button onclick="requestAudioList()">Refresh Audio List</button>
+    <button onclick="stopAudio()" style="background-color: #ff5555; color: white;">Stop Audio</button>
+    
+    <div id="audio-list" style="margin-top: 10px; border: 1px solid #ccc; padding: 10px; min-height: 100px;">
+        <i>No files loaded yet. Click "Refresh Audio List"</i>
+    </div>
+
     <div id="status">Connecting...</div>
 
     <script>
@@ -22,12 +33,27 @@
         let features = { "twitch": true, "kick": true, "youtube": true, "stt": true, 
         "chat": true, "raid": true, "follow": true, "subs": true, "monologue": true };
 
-        ws.onopen = () => { document.getElementById('status').innerText = 'Connected to backend.'; updateToggles(); };
+        ws.onopen = () => { 
+            document.getElementById('status').innerText = 'Connected to backend.'; 
+            updateToggles(); 
+        };
+
         ws.onmessage = (event) => { 
             const data = JSON.parse(event.data); 
-            if (data.type === 'states') { features = data.data; updateToggles(); } 
+            
+            if (data.type === 'states') { 
+                features = data.data; 
+                updateToggles(); 
+            } 
+            
+            if (data.type === 'audio_files') {
+                renderAudioList(data.data);
+            }
         };
-        ws.onclose = () => { document.getElementById('status').innerText = 'Disconnected.'; };
+
+        ws.onclose = () => { 
+            document.getElementById('status').innerText = 'Disconnected.'; 
+        };
 
         function updateToggles() {
             const togglesDiv = document.getElementById('toggles');
@@ -49,6 +75,41 @@
 
         function sendCommand(action) {
             ws.send(JSON.stringify({ action: action }));
+        }
+
+        function requestAudioList() {
+            ws.send(JSON.stringify({ action: 'list_audio_files' }));
+            document.getElementById('audio-list').innerHTML = '<i>Loading...</i>';
+        }
+
+        function renderAudioList(files) {
+            const container = document.getElementById('audio-list');
+            container.innerHTML = '';
+
+            if (!files || files.length === 0) {
+                container.innerHTML = '<i>No audio files found in the audio folder.</i>';
+                return;
+            }
+
+            files.forEach(file => {
+                const btn = document.createElement('button');
+                btn.innerText = file;
+                btn.style.display = 'block';
+                btn.style.margin = '4px 0';
+                btn.onclick = () => {
+                    ws.send(JSON.stringify({ 
+                        action: 'play_audio', 
+                        file_path: file 
+                    }));
+                    document.getElementById('status').innerText = `Playing: ${file}`;
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function stopAudio() {
+            ws.send(JSON.stringify({ action: 'stop_audio' }));
+            document.getElementById('status').innerText = 'Audio stopped';
         }
     </script>
 </body>
