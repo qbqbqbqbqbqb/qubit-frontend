@@ -2,115 +2,69 @@
 <html lang="en">
 <head>
     <title>Stream Controller</title>
-    <style>
-        body { font-family: Arial, sans-serif; }
-        button { margin: 5px; padding: 10px; }
-        .toggle-on { background-color: green; color: white; }
-        .toggle-off { background-color: red; color: white; }
-    </style>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <script type="module" src="/static/js/control.js" defer></script>
 </head>
 <body>
     <h1>VTuber Bot Control</h1>
-    
-    <button onclick="sendCommand('terminate')">Stop Bot</button>
-    <button onclick="sendCommand('start')">Start Bot</button>
+
+    <h3>Bot Lifecycle</h3>
+    <button id="init-btn" class="lifecycle-btn" onclick="doInitialize()">Initialize / Setup</button>
+    <button id="start-btn" class="lifecycle-btn" onclick="doStartProcessing()">Start Processing</button>
+    <button id="pause-btn" class="lifecycle-btn" onclick="doPause()">Pause</button>
+    <button id="resume-btn" class="lifecycle-btn" onclick="doResume()">Resume</button>
+    <button id="stop-btn" onclick="sendCommand('terminate')">Full Stop</button>
 
     <h2>Feature Toggles</h2>
     <div id="toggles"></div>
 
     <h2>Audio Files (Sing)</h2>
-    <button onclick="requestAudioList()">Refresh Audio List</button>
-    <button onclick="stopAudio()" style="background-color: #ff5555; color: white;">Stop Audio</button>
-    
-    <div id="audio-list" style="margin-top: 10px; border: 1px solid #ccc; padding: 10px; min-height: 100px;">
-        <i>No files loaded yet. Click "Refresh Audio List"</i>
+    <div id="audio-list"></div>
+
+    <h2>PNG Avatar Models</h2>
+
+    <h3>Load Model</h3>
+    <div class="lifecycle-group">
+        <button onclick="refreshPngModels()">Refresh Models</button>
+        <select id="png-model-select" style="padding: 8px; width: 220px;">
+            <option value="">-- Select Model --</option>
+        </select>
+        <button onclick="loadSelectedModel()">Load Model</button>
+        <button onclick="setPngMode('idle')">Force Idle</button>
+        <button onclick="setPngMode('speak')">Force Speak</button>
+    </div>
+    <div id="png-status" style="font-size: 0.9em; margin-top: 4px; min-height: 1.2em;"></div>
+
+    <h3>Upload New Model</h3>
+    <div class="lifecycle-group" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+        <label>
+            Model name:
+            <input id="upload-model-name" type="text" placeholder="e.g. qubit_default" style="padding: 6px; width: 200px; margin-left: 8px;">
+        </label>
+        <label>
+            Blink + Idle:
+            <input id="upload-blink-idle" type="file" accept="image/png" style="margin-left: 8px;">
+        </label>
+        <label>
+            Blink + Speaking:
+            <input id="upload-blink-speaking" type="file" accept="image/png" style="margin-left: 8px;">
+        </label>
+        <label>
+            Eyes Open + Idle:
+            <input id="upload-open-idle" type="file" accept="image/png" style="margin-left: 8px;">
+        </label>
+        <label>
+            Eyes Open + Speaking:
+            <input id="upload-open-speaking" type="file" accept="image/png" style="margin-left: 8px;">
+        </label>
+        <button onclick="uploadModel()">Upload Model</button>
     </div>
 
-    <div id="status">Connecting...</div>
+    <h2>View Output</h2>
+    <button onclick="launchOverlayWindow()" style="background-color: var(--primary);">Launch Overlay Window</button>
 
-    <script>
-        const ws = new WebSocket('ws://localhost:8765');
-        let features = { "twitch": true, "kick": true, "youtube": true, "stt": true, 
-        "chat": true, "raid": true, "follow": true, "subs": true, "monologue": true };
-
-        ws.onopen = () => { 
-            document.getElementById('status').innerText = 'Connected to backend.'; 
-            updateToggles(); 
-        };
-
-        ws.onmessage = (event) => { 
-            const data = JSON.parse(event.data); 
-            
-            if (data.type === 'states') { 
-                features = data.data; 
-                updateToggles(); 
-            } 
-            
-            if (data.type === 'audio_files') {
-                renderAudioList(data.data);
-            }
-        };
-
-        ws.onclose = () => { 
-            document.getElementById('status').innerText = 'Disconnected.'; 
-        };
-
-        function updateToggles() {
-            const togglesDiv = document.getElementById('toggles');
-            togglesDiv.innerHTML = '';
-            for (const [key, value] of Object.entries(features)) {
-                const btn = document.createElement('button');
-                btn.innerText = `${key.charAt(0).toUpperCase() + key.slice(1)}: ${value ? 'ON' : 'OFF'}`;
-                btn.className = value ? 'toggle-on' : 'toggle-off';
-                btn.onclick = () => toggleFeature(key);
-                togglesDiv.appendChild(btn);
-            }
-        }
-
-        function toggleFeature(input) {
-            const currentState = features[input];
-            const newState = currentState ? 'off' : 'on';
-            ws.send(JSON.stringify({ action: 'toggle', input: input, state: newState }));
-        }
-
-        function sendCommand(action) {
-            ws.send(JSON.stringify({ action: action }));
-        }
-
-        function requestAudioList() {
-            ws.send(JSON.stringify({ action: 'list_audio_files' }));
-            document.getElementById('audio-list').innerHTML = '<i>Loading...</i>';
-        }
-
-        function renderAudioList(files) {
-            const container = document.getElementById('audio-list');
-            container.innerHTML = '';
-
-            if (!files || files.length === 0) {
-                container.innerHTML = '<i>No audio files found in the audio folder.</i>';
-                return;
-            }
-
-            files.forEach(file => {
-                const btn = document.createElement('button');
-                btn.innerText = file;
-                btn.style.display = 'block';
-                btn.style.margin = '4px 0';
-                btn.onclick = () => {
-                    ws.send(JSON.stringify({ 
-                        action: 'play_audio', 
-                        file_path: file 
-                    }));
-                    document.getElementById('status').innerText = `Playing: ${file}`;
-                };
-                container.appendChild(btn);
-            });
-        }
-
-        function stopAudio() {
-            ws.send(JSON.stringify({ action: 'stop_audio' }));
-            document.getElementById('status').innerText = 'Audio stopped';
-        }
-    </script>
+    <div id="status"></div>
+    <button id="retry-btn" onclick="forceReconnect()" style="display:none;">Retry now</button>
+    <div id="cmd-status"></div>
 </body>
 </html>

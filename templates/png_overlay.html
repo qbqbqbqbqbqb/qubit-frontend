@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PNG Avatar Overlay</title>
+    <style>
+        body { 
+            margin: 0; 
+            padding: 0; 
+            background: transparent; 
+            overflow: hidden; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+        }
+        img { 
+            max-width: 100%; 
+            max-height: 100vh; 
+            object-fit: contain; 
+            transition: transform 0.1s ease; /* Smooths out sudden layout shifts */
+        }
+    </style>
+</head>
+<body>
+    <img id="avatar" src="" alt="VTuber Avatar" />
+
+    <script>
+        // Dynamically build the WebSocket URL based on the current browser location
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/png/ws`;
+        
+        const img = document.getElementById('avatar');
+        let ws;
+
+        function connectOverlay() {
+            ws = new WebSocket(wsUrl);
+
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.url) {
+                        img.src = data.url;
+                    }
+                } catch (e) {
+                    console.error("Error parsing overlay websocket payload", e);
+                }
+            };
+
+            ws.onclose = () => {
+                // Simple static reconnect loop if the backend drops/restarts
+                setTimeout(connectOverlay, 3000);
+            };
+
+            ws.onerror = (err) => {
+                console.error("Overlay socket error:", err);
+                ws.close();
+            };
+        }
+
+        // Initialize connection
+        connectOverlay();
+    </script>
+</body>
+</html>

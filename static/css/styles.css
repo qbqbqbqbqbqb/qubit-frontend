@@ -1,0 +1,198 @@
+/* ==========================================================================
+   1. VARIABLES & BASE RESETS
+   ========================================================================== */
+:root {
+    --bg-color: #1a1a1a;
+    --card-bg: #242424;
+    --text-color: #e0e0e0;
+    --text-muted: #888888;
+    --border-color: #333333;
+    
+    /* Button States */
+    --primary: #4a90e2;
+    --primary-hover: #357abd;
+    --success: #2e7d32;
+    --success-hover: #1b5e20;
+    --danger: #d32f2f;
+    --danger-hover: #c62828;
+    --neutral: #424242;
+    --neutral-hover: #616161;
+    
+    --radius: 6px;
+    --transition: all 0.2s ease;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    line-height: 1.5;
+    padding: 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+h1, h2, h3 {
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+h1 {
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 0.5rem;
+    margin-bottom: 2rem;
+}
+
+h2 {
+    margin-top: 2.5rem;
+    font-size: 1.5rem;
+    color: #ffffff;
+}
+
+h3 {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* ==========================================================================
+   2. BUTTONS & ACTIONS (FLEXBOX)
+   ========================================================================== */
+button {
+    font-size: 0.95rem;
+    font-weight: 500;
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: var(--transition);
+    background-color: var(--neutral);
+    color: #ffffff;
+}
+
+button:hover:not(:disabled) {
+    background-color: var(--neutral-hover);
+}
+
+button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Specific button styles mapped to your original classes */
+.lifecycle-btn {
+    background-color: var(--neutral);
+}
+
+#stop-btn {
+    background-color: var(--danger);
+}
+
+#stop-btn:hover:not(:disabled) {
+    background-color: var(--danger-hover);
+}
+
+.toggle-on {
+    background-color: var(--success);
+}
+
+.toggle-on:hover:not(:disabled) {
+    background-color: var(--success-hover);
+}
+
+.toggle-off {
+    background-color: var(--danger);
+}
+
+.toggle-off:hover:not(:disabled) {
+    background-color: var(--danger-hover);
+}
+
+/* ==========================================================================
+   3. LAYOUT CONTAINERS (FLEXBOX)
+   ========================================================================== */
+/* Container wrapping the main lifecycle buttons */
+body > div:first-of-type, 
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Layout layout handling for group wrappers */
+#toggles, 
+#audio-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+/* Specific layouts */
+#toggles button {
+    flex: 1 1 calc(25% - 0.5rem); /* Responsive row filling */
+    min-width: 140px;
+}
+
+#audio-list {
+    flex-direction: column;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    padding: 1rem;
+    border-radius: var(--radius);
+    min-height: 100px;
+}
+
+#audio-list i {
+    color: var(--text-muted);
+}
+
+/* Inline container utility */
+.lifecycle-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+/* ==========================================================================
+   4. STATUS & FOOTER MECHANICS
+   ========================================================================== */
+#status {
+    margin-top: 2rem;
+    padding: 1rem;
+    background-color: var(--card-bg);
+    border-left: 4px solid var(--primary);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    font-weight: 500;
+}
+
+#cmd-status {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    min-height: 1.5rem;
+    font-style: italic;
+}
+
+#retry-btn {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+    background-color: var(--primary);
+    margin-left: 0.5rem;
+}
+
+#retry-btn:hover {
+    background-color: var(--primary-hover);
+}
+
+.muted-note {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+}
