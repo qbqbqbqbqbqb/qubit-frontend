@@ -15,4 +15,4 @@ app.include_router(png_router)
 
 @app.get("/", response_class=HTMLResponse)
 async def control_page(request: Request):
-    return templates.TemplateResponse("control.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="control.html")
