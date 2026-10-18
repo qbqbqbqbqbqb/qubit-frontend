@@ -2,6 +2,7 @@ import { VTuberWebSocket } from './websocket.js';
 
 let botPhase = 'disconnected';
 let features = { "twitch": true, "kick": true, "youtube": true, "stt": true, "chat": true, "raid": true, "follow": true, "subs": true, "monologue": true, "vtube_studio": true };
+let memoryState = { read: true, write: true };
 
 // Cache DOM Elements
 const elements = {
@@ -63,6 +64,11 @@ function updateLifecycleButtons(phase) {
 // WS Callback Orchestrator
 function handleIncomingMessage(data) {
     if (data.type === 'audio_files') renderAudioList(data.data);
+    if (data.type === 'bot_state' && data.data) {
+        if (typeof data.data.memory_read === 'boolean') memoryState.read = data.data.memory_read;
+        if (typeof data.data.memory_write === 'boolean') memoryState.write = data.data.memory_write;
+        updateMemoryToggles();
+    }
 }
 
 // Instantiate socket engine
@@ -88,6 +94,34 @@ function updateToggles() {
         };
         elements.toggles.appendChild(btn);
     });
+}
+
+function updateMemoryToggles() {
+    const container = document.getElementById('memory-toggles');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const defs = [
+        { key: 'read',  label: 'Memory Read',  flag: 'memory_read' },
+        { key: 'write', label: 'Memory Write', flag: 'memory_write' },
+    ];
+
+    defs.forEach(({ key, label, flag }) => {
+        const on = memoryState[key];
+        const btn = document.createElement('button');
+        btn.innerText = `${label}: ${on ? 'ON' : 'OFF'}`;
+        btn.className = on ? 'toggle-on' : 'toggle-off';
+        btn.onclick = () => sendMemoryToggle(flag, key);
+        container.appendChild(btn);
+    });
+}
+
+function sendMemoryToggle(flag, stateKey) {
+    const newState = !memoryState[stateKey];
+    botSocket.send({ action: 'toggle', input: flag, state: newState ? 'on' : 'off' });
+    // Optimistic local update — server confirms via the next bot_state broadcast.
+    memoryState[stateKey] = newState;
+    updateMemoryToggles();
 }
 
 function renderAudioList(files) {
@@ -233,5 +267,6 @@ window.forceReconnect = () => botSocket.forceReconnect();
 
     botSocket.connect();
     updateToggles();
+    updateMemoryToggles();
     updateLifecycleButtons('disconnected');
 })();
