@@ -1,7 +1,7 @@
 import { VTuberWebSocket } from './websocket.js';
 
 let botPhase = 'disconnected';
-let features = { "twitch": true, "kick": true, "youtube": true, "stt": true, "chat": true, "raid": true, "follow": true, "subs": true, "monologue": true, "vtube_studio": true };
+let features = { "twitch": true, "kick": true, "youtube": true, "stt": true, "chat": true, "raid": true, "follow": true, "subs": true, "monologue": true, "vtube_studio": true, "chat_logging": false };
 let memoryState = { read: true, write: true };
 
 // Cache DOM Elements
