@@ -126,7 +126,8 @@ body {
 }
 
 /* Layout layout handling for group wrappers */
-#toggles, 
+#toggles,
+#memory-toggles,
 #audio-list {
     display: flex;
     flex-wrap: wrap;
@@ -135,7 +136,8 @@ body {
 }
 
 /* Specific layouts */
-#toggles button {
+#toggles button,
+#memory-toggles button {
     flex: 1 1 calc(25% - 0.5rem); /* Responsive row filling */
     min-width: 140px;
 }

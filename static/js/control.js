@@ -15,6 +15,7 @@ const elements = {
     status: document.getElementById('status'),
     cmdStatus: document.getElementById('cmd-status'),
     toggles: document.getElementById('toggles'),
+    memoryToggles: document.getElementById('memory-toggles'),
     audioList: document.getElementById('audio-list'),
     pngSelect: document.getElementById('png-model-select'),
     pngStatus: document.getElementById('png-status'),
@@ -97,7 +98,7 @@ function updateToggles() {
 }
 
 function updateMemoryToggles() {
-    const container = document.getElementById('memory-toggles');
+    const container = elements.memoryToggles;
     if (!container) return;
     container.innerHTML = '';
 
