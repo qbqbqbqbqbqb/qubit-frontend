@@ -10,6 +10,7 @@ const elements = {
     startBtn: document.getElementById('start-btn'),
     pauseBtn: document.getElementById('pause-btn'),
     resumeBtn: document.getElementById('resume-btn'),
+    endStreamBtn: document.getElementById('end-stream-btn'),
     stopBtn: document.getElementById('stop-btn'),
     retryBtn: document.getElementById('retry-btn'),
     status: document.getElementById('status'),
@@ -38,7 +39,7 @@ function updateLifecycleButtons(phase) {
     botPhase = phase;
     if (elements.status) elements.status.innerText = phase === 'disconnected' ? 'Disconnected' : `Connected - Phase: ${phase}`;
 
-    const buttons = [elements.initBtn, elements.startBtn, elements.pauseBtn, elements.resumeBtn, elements.stopBtn];
+    const buttons = [elements.initBtn, elements.startBtn, elements.pauseBtn, elements.resumeBtn, elements.endStreamBtn, elements.stopBtn];
     buttons.forEach(b => { if (b) b.disabled = false; });
 
     if (phase === 'disconnected') {
@@ -47,10 +48,12 @@ function updateLifecycleButtons(phase) {
         if (elements.startBtn) elements.startBtn.disabled = true;
         if (elements.pauseBtn) elements.pauseBtn.disabled = true;
         if (elements.resumeBtn) elements.resumeBtn.disabled = true;
+        if (elements.endStreamBtn) elements.endStreamBtn.disabled = true;
     } else if (phase === 'initialized') {
         if (elements.initBtn) elements.initBtn.disabled = true;
         if (elements.pauseBtn) elements.pauseBtn.disabled = true;
         if (elements.resumeBtn) elements.resumeBtn.disabled = true;
+        if (elements.endStreamBtn) elements.endStreamBtn.disabled = true;
     } else if (phase === 'running') {
         if (elements.initBtn) elements.initBtn.disabled = true;
         if (elements.startBtn) elements.startBtn.disabled = true;
@@ -59,6 +62,12 @@ function updateLifecycleButtons(phase) {
         if (elements.initBtn) elements.initBtn.disabled = true;
         if (elements.startBtn) elements.startBtn.disabled = true;
         if (elements.pauseBtn) elements.pauseBtn.disabled = true;
+    } else if (phase === 'stream_ended') {
+        if (elements.initBtn) elements.initBtn.disabled = true;
+        if (elements.startBtn) elements.startBtn.disabled = true;
+        if (elements.pauseBtn) elements.pauseBtn.disabled = true;
+        if (elements.resumeBtn) elements.resumeBtn.disabled = true;
+        if (elements.endStreamBtn) elements.endStreamBtn.disabled = true;
     }
 }
 
@@ -258,6 +267,7 @@ window.doInitialize = () => { botSocket.send({ action: 'initialize' }); updateLi
 window.doStartProcessing = () => botSocket.send({ action: 'start', features });
 window.doPause = () => { botSocket.send({ action: 'pause' }); updateLifecycleButtons('paused'); };
 window.doResume = () => { botSocket.send({ action: 'resume' }); updateLifecycleButtons('running'); };
+window.doEndStream = () => { botSocket.send({ action: 'end_stream' }); updateLifecycleButtons('stream_ended'); };
 window.sendCommand = (action) => botSocket.send({ action });
 window.forceReconnect = () => botSocket.forceReconnect();
 
