@@ -1,64 +1,74 @@
 export class VTuberWebSocket {
     constructor(url, onMessageCallback, onPhaseChangeCallback, onLogCallback) {
-        self.url = url;
-        self.ws = null;
-        self.reconnectAttempts = 0;
-        self.maxReconnectDelay = 30000;
-        self.manualRetry = false;
-        
-        self.onMessage = onMessageCallback;
-        self.onPhaseChange = onPhaseChangeCallback;
-        self.onLog = onLogCallback;
+        this.url = url;
+        this.ws = null;
+        this.reconnectAttempts = 0;
+        this.maxReconnectDelay = 30000;
+        this.manualRetry = false;
+
+        this.onMessage = onMessageCallback;
+        this.onPhaseChange = onPhaseChangeCallback;
+        this.onLog = onLogCallback;
     }
 
     connect() {
-        self.ws = new WebSocket(self.url);
+        this.ws = new WebSocket(this.url);
 
-        self.ws.onopen = () => {
-            self.reconnectAttempts = 0;
-            self.onLog('', false, true); // Clear retry button interface
-            self.onPhaseChange('ready');
+        this.ws.onopen = () => {
+            this.reconnectAttempts = 0;
+            this.onLog('', false, true);
+            this.onPhaseChange('ready');
         };
 
-        self.ws.onmessage = (event) => {
+        this.ws.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
-                self.onMessage(data);
+                this.onMessage(data);
             } catch (e) {
                 console.error("Failed parsing WS message", e);
             }
         };
 
-        self.ws.onclose = () => {
-            self.onPhaseChange('disconnected');
-            if (self.manualRetry) {
-                self.manualRetry = false;
-                self.connect();
+        this.ws.onclose = () => {
+            this.onPhaseChange('disconnected');
+            if (this.manualRetry) {
+                this.manualRetry = false;
+                this.connect();
                 return;
             }
-            const delay = Math.min(1000 * Math.pow(2, self.reconnectAttempts), self.maxReconnectDelay);
-            self.onLog(`Reconnecting in ${Math.round(delay / 1000)}s...`, false, false);
-            self.reconnectAttempts++;
-            setTimeout(() => self.connect(), delay);
+            const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), this.maxReconnectDelay);
+            this.onLog(`Reconnecting in ${Math.round(delay / 1000)}s...`, false, false);
+            this.reconnectAttempts++;
+            setTimeout(() => this.connect(), delay);
+        };
+
+        this.ws.onerror = () => {
+            // Let onclose handle reconnect logic — onerror always precedes onclose.
         };
     }
 
     send(obj) {
-        if (self.ws && self.ws.readyState === WebSocket.OPEN) {
-            self.ws.send(JSON.stringify(obj));
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(JSON.stringify(obj));
             if (obj.action && ['initialize', 'start', 'pause', 'resume', 'terminate'].includes(obj.action)) {
-                self.onLog(`Sent: ${obj.action}`, false);
+                this.onLog(`Sent: ${obj.action}`, false);
             }
         } else {
-            self.onLog('Not connected to backend.', true);
+            this.onLog('Not connected to backend.', true);
         }
     }
 
     forceReconnect() {
-        self.manualRetry = true;
-        self.reconnectAttempts = 0;
-        self.onLog('Reconnecting...', false);
-        if (self.ws) self.ws.close();
-        else self.connect();
+        this.manualRetry = true;
+        this.reconnectAttempts = 0;
+        this.onLog('Reconnecting...', false);
+        if (this.ws && this.ws.readyState !== WebSocket.CLOSED) {
+            this.ws.close();
+            // onclose will fire and call connect() via the manualRetry flag
+        } else {
+            // Already closed or never opened — connect directly
+            this.manualRetry = false;
+            this.connect();
+        }
     }
 }
