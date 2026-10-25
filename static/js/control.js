@@ -10,6 +10,7 @@ const elements = {
     startBtn: document.getElementById('start-btn'),
     pauseBtn: document.getElementById('pause-btn'),
     resumeBtn: document.getElementById('resume-btn'),
+    streamTypeInput: document.getElementById('stream-type-input'),
     endStreamBtn: document.getElementById('end-stream-btn'),
     stopBtn: document.getElementById('stop-btn'),
     retryBtn: document.getElementById('retry-btn'),
@@ -78,6 +79,9 @@ function handleIncomingMessage(data) {
         if (typeof data.data.memory_read === 'boolean') memoryState.read = data.data.memory_read;
         if (typeof data.data.memory_write === 'boolean') memoryState.write = data.data.memory_write;
         updateMemoryToggles();
+        if (data.data.stream_type && elements.streamTypeInput) {
+            elements.streamTypeInput.placeholder = data.data.stream_type;
+        }
     }
 }
 
@@ -268,6 +272,10 @@ window.doStartProcessing = () => botSocket.send({ action: 'start', features });
 window.doPause = () => { botSocket.send({ action: 'pause' }); updateLifecycleButtons('paused'); };
 window.doResume = () => { botSocket.send({ action: 'resume' }); updateLifecycleButtons('running'); };
 window.doEndStream = () => { botSocket.send({ action: 'end_stream' }); updateLifecycleButtons('stream_ended'); };
+window.doSetStreamType = () => {
+    const val = elements.streamTypeInput.value.trim();
+    if (val) botSocket.send({ action: 'set_stream_type', stream_type: val });
+};
 window.sendCommand = (action) => botSocket.send({ action });
 window.forceReconnect = () => botSocket.forceReconnect();
 
