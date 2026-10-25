@@ -1,7 +1,7 @@
 import { VTuberWebSocket } from './websocket.js';
 
 let botPhase = 'disconnected';
-let features = { "twitch": true, "kick": true, "youtube": true, "stt": true, "chat": true, "raid": true, "follow": true, "subs": true, "monologue": true, "vtube_studio": true, "chat_logging": false };
+let features = { "twitch": true, "kick": true, "youtube": true, "stt": true, "chat": true, "raid": true, "follow": true, "subs": true, "monologue": true, "vtube_studio": true, "chat_logging": false, "vision": false };
 let memoryState = { read: true, write: true };
 
 // Cache DOM Elements
@@ -11,6 +11,7 @@ const elements = {
     pauseBtn: document.getElementById('pause-btn'),
     resumeBtn: document.getElementById('resume-btn'),
     streamTypeInput: document.getElementById('stream-type-input'),
+    visionWindowSelect: document.getElementById('vision-window-select'),
     endStreamBtn: document.getElementById('end-stream-btn'),
     stopBtn: document.getElementById('stop-btn'),
     retryBtn: document.getElementById('retry-btn'),
@@ -75,6 +76,7 @@ function updateLifecycleButtons(phase) {
 // WS Callback Orchestrator
 function handleIncomingMessage(data) {
     if (data.type === 'audio_files') renderAudioList(data.data);
+    if (data.type === 'window_list') populateWindowList(data.data);
     if (data.type === 'bot_state' && data.data) {
         if (typeof data.data.memory_read === 'boolean') memoryState.read = data.data.memory_read;
         if (typeof data.data.memory_write === 'boolean') memoryState.write = data.data.memory_write;
@@ -82,7 +84,55 @@ function handleIncomingMessage(data) {
         if (data.data.stream_type && elements.streamTypeInput) {
             elements.streamTypeInput.placeholder = data.data.stream_type;
         }
+        if (data.data.health) renderHealthPanel(data.data.health);
+        if (data.data.current_obs_scene !== undefined) {
+            const el = document.getElementById('current-obs-scene');
+            if (el) el.textContent = data.data.current_obs_scene || '—';
+        }
+        if (data.data.vision_window !== undefined && elements.visionWindowSelect) {
+            const current = data.data.vision_window;
+            const existing = elements.visionWindowSelect.querySelector(`option[value="${CSS.escape(current)}"]`);
+            if (existing) existing.selected = true;
+        }
     }
+}
+
+function renderHealthPanel(health) {
+    const container = document.getElementById('health-list');
+    if (!container || !health) return;
+    container.innerHTML = '';
+    const entries = Object.entries(health);
+    if (entries.length === 0) {
+        container.textContent = 'No services reporting yet.';
+        return;
+    }
+    entries.forEach(([name, info]) => {
+        const row = document.createElement('div');
+        row.className = `health-row health-${info.status}`;
+        const label = document.createElement('span');
+        label.className = 'health-name';
+        label.textContent = name;
+        const status = document.createElement('span');
+        status.className = 'health-status';
+        status.textContent = info.status;
+        if (info.detail) status.title = info.detail;
+        row.appendChild(label);
+        row.appendChild(status);
+        container.appendChild(row);
+    });
+}
+
+function populateWindowList(windows) {
+    if (!elements.visionWindowSelect) return;
+    const current = elements.visionWindowSelect.value;
+    elements.visionWindowSelect.innerHTML = '<option value="">-- select window --</option>';
+    windows.forEach(title => {
+        const opt = document.createElement('option');
+        opt.value = title;
+        opt.textContent = title;
+        if (title === current) opt.selected = true;
+        elements.visionWindowSelect.appendChild(opt);
+    });
 }
 
 // Instantiate socket engine
@@ -275,6 +325,11 @@ window.doEndStream = () => { botSocket.send({ action: 'end_stream' }); updateLif
 window.doSetStreamType = () => {
     const val = elements.streamTypeInput.value.trim();
     if (val) botSocket.send({ action: 'set_stream_type', stream_type: val });
+};
+window.doRefreshWindows = () => { botSocket.send({ action: 'list_windows' }); };
+window.doSetVisionWindow = () => {
+    const val = elements.visionWindowSelect ? elements.visionWindowSelect.value : '';
+    botSocket.send({ action: 'set_vision_window', window: val });
 };
 window.sendCommand = (action) => botSocket.send({ action });
 window.forceReconnect = () => botSocket.forceReconnect();

@@ -13,9 +13,23 @@
     <button id="start-btn" class="lifecycle-btn" onclick="doStartProcessing()">Start Processing</button>
     <button id="pause-btn" class="lifecycle-btn" onclick="doPause()">Pause</button>
     <button id="resume-btn" class="lifecycle-btn" onclick="doResume()">Resume</button>
+    <div id="health-panel">
+        <h3>Service Health</h3>
+        <div id="health-list"></div>
+        <div id="obs-scene-display">OBS Scene: <span id="current-obs-scene">—</span></div>
+    </div>
+
     <div id="stream-type-control">
         <input id="stream-type-input" type="text" placeholder="Stream type (e.g. Just Chatting)" />
         <button onclick="doSetStreamType()">Set</button>
+    </div>
+
+    <div id="vision-control">
+        <select id="vision-window-select">
+            <option value="">-- select window --</option>
+        </select>
+        <button onclick="doRefreshWindows()">Refresh</button>
+        <button onclick="doSetVisionWindow()">Set Window</button>
     </div>
     <button id="end-stream-btn" class="lifecycle-btn" onclick="doEndStream()">End Stream</button>
     <button id="stop-btn" onclick="sendCommand('terminate')">Full Stop</button>
